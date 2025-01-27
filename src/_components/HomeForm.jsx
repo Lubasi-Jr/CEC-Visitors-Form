@@ -111,35 +111,41 @@ const HomeForm = () => {
     setHideError(true);
 
     //Submission body
-    const newVisitorBody = {
-      visitor: {
+
+    const updatedBody = {
+      first_name: formState.first,
+      last_name: formState.last,
+      address: formState.addy,
+      company_name: formState.company,
+      email: formState.email,
+      phone: formState.phone,
+      id_type: formState.idType,
+      id_number: formState.nrc,
+      verified_visitor: true,
+      created_at: new Date().toISOString(),
+    };
+    //console.log(newVisitorBody);
+
+    try {
+      const response = await axiosInstance.post("/Visitors/CreateVisitor", {
         first_name: formState.first,
         last_name: formState.last,
         address: formState.addy,
         company_name: formState.company,
         email: formState.email,
         phone: formState.phone,
-        created_at: new Date().toISOString(),
-      },
-      visitorId: {
         id_type: formState.idType,
         id_number: formState.nrc,
-        stored_at: new Date().toISOString(),
-        visitor_id: 0,
-      },
-    };
-    //console.log(newVisitorBody);
-
-    try {
-      const response = await axiosInstance.post(
-        "/Visitors/CreateVisitor",
-        newVisitorBody
-      );
+        verified_visitor: false,
+        created_at: new Date().toISOString(),
+      });
       console.log("New Visitor Created: ", response.data);
       setNotClickable(false);
       navigate("/submit");
     } catch (error) {
       console.log(error);
+      console.log(updatedBody);
+
       setNotClickable(false);
     }
   };

@@ -3,22 +3,15 @@ import { Input } from "../components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { NRCPattern, namePattern, phoneNumberPattern } from "@/regex_constants";
+
 import axiosInstance from "@/api/axiosInstance";
 import { useNavigate } from "react-router-dom";
-
+import { toast } from "sonner";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const ACTIONS = {
   UPDATE_FIELD: "update_field",
   RESET_FORM: "reset_field",
-};
-
-const errorTypes = {
-  nameError: "Names should not have any numbers",
-  phoneError:
-    "Phone number should be digits only, no spaces. For International Numbers, start with a '+'",
-  idError: "Invalid NRC Number",
 };
 
 function reducer(state, action) {
@@ -35,8 +28,7 @@ function reducer(state, action) {
 const HomeForm = () => {
   //const [radioItem, setRadioItem] = useState("");
   const navigate = useNavigate();
-  const [error, setError] = useState(errorTypes.nameError);
-  const [hideError, setHideError] = useState(true);
+
   const [notClickable, setNotClickable] = useState(false);
   const STATES = {
     first: "",
@@ -80,35 +72,49 @@ const HomeForm = () => {
   const handleClick = async (e) => {
     e.preventDefault();
     setNotClickable(true);
-    //Check for ID error
-    const NRCRegex = new RegExp(NRCPattern);
-    if (formState.idType == "NRC") {
-      if (!NRCRegex.test(formState.nrc)) {
-        console.log("Error with the NRC");
-        setError(errorTypes.idError);
-        setHideError(false);
-        setNotClickable(false);
-        return;
-      }
+
+    //Do all regex checks, use toast.error where you find an error
+    // Validate First Name: No numbers allowed
+    const nameRegex = /^[A-Za-z\s]+$/;
+    if (!nameRegex.test(formState.first)) {
+      toast.error(
+        "First Name should not contain numbers or special characters."
+      );
+      setNotClickable(false);
+      return; // Stop the submission if first name is invalid
     }
 
-    //Check for Name Error
-    const nameRegex = new RegExp(namePattern);
-    /* if (!(nameRegex.test(formState.first) && nameRegex.test(formState.last))) {
-      //One of the names does not meet the criteria
-      console.log("Error with the Name");
-      setError(errorTypes.nameError);
-      setHideError(false);
+    // Validate Last Name: No numbers allowed
+    if (!nameRegex.test(formState.last)) {
+      toast.error(
+        "Last Name should not contain numbers or special characters."
+      );
       setNotClickable(false);
-      return;
-    } */
+      return; // Stop the submission if last name is invalid
+    }
+
+    // Validate Email: Check for a valid email format
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+    if (!emailRegex.test(formState.email)) {
+      toast.error("Please enter a valid email address.");
+      setNotClickable(false);
+      return; // Stop the submission if email is invalid
+    }
+
+    // Validate NRC if ID Type is "NRC"
+    if (formState.idType === "NRC") {
+      const nrcRegex = /^\d{5}\/\d{2}\/\d{1}$/;
+      if (!nrcRegex.test(formState.nrc)) {
+        toast.error("NRC should be in the format: 12345/12/3");
+        setNotClickable(false);
+        return; // Stop the submission if NRC is invalid
+      }
+    }
 
     //Convert number to string
     formState.phone = formState.phone.toString();
 
     console.log("NO ERRORS, Proceed with submission");
-    setError("");
-    setHideError(true);
 
     //Submission body
 
@@ -144,6 +150,7 @@ const HomeForm = () => {
       navigate("/submit");
     } catch (error) {
       console.log(error);
+      toast.error("A server side error occurred while submitting");
       console.log(updatedBody);
 
       setNotClickable(false);
@@ -267,9 +274,6 @@ const HomeForm = () => {
             Reset
           </Button>
         </form>
-        <h3 className={`text-cecRed italic ${hideError && "hidden"}`}>
-          {error}
-        </h3>
       </div>
     </div>
   );
